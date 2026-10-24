@@ -304,3 +304,17 @@ node cli.js run actions.json --json                        # 执行计划
 
 **窗口被别的程序挡住了截图是黑的**
 加 `--method screen` 前先把窗口激活（`node cli.js activate`），或保持默认 `auto` 让它走后台绘制。
+
+**发 `win close` 后窗口还在**
+说明弹了「是否保存更改」对话框——`WM_CLOSE` 只是请问一句，没有替你决定。处理方式：
+
+```bash
+node cli.js shot --app notepad --out d.png --max-width 900   # 看一眼对话框
+node cli.js click --app notepad 446 269                      # 点"不保存"（按截图定位）
+```
+
+批量关闭时写个循环：截图 → 判断对话框是否还在 → 点"不保存" → 直到窗口消失。
+多标签页的记事本会给**每个未保存标签**各弹一次，所以必须循环，不能只点一次。
+
+> Windows 11 记事本关闭时会把标签页记到下一次启动，所以即使点了"不保存"，
+> 下次打开仍可能恢复这些标签——想彻底清掉，请在记事本里手动关闭对应标签。
