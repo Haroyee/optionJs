@@ -163,7 +163,9 @@ node examples/ai-agent.js "在记事本里写一首关于秋天的四行诗"
 
 ## 已知限制
 
-- **管理员权限窗口**：目标进程以管理员身份运行时，本程序也必须以管理员身份启动，否则 `SendInput` 会被 UIPI 拦截（错误信息会提示）
+- **管理员权限窗口**：目标进程以管理员身份运行时，Windows 的 UIPI 会静默丢弃低权限进程的模拟输入（命令成功但界面不动）。
+  解决办法是用 [提权输入桥](./docs/ELEVATED-APPS.md)：管理员身份跑 `node bridge.js`，普通脚本通过本机 HTTP 调用。
+- **反作弊保护的应用**：TenProtect / ACE 这类内核级反作弊会拦截注入输入，提权也无法绕过，属于其设计目标
 - **DirectX / 独占全屏游戏**：`PrintWindow` 抓不到，抓屏只在前台有效
 - **部分 Electron/Chromium 应用**：后台 `PrintWindow` 可能返回黑图，此时会自动回退到抓屏（需窗口在前台）
 - **UWP 部分应用**：窗口被 DWM cloak 时会被过滤掉，UWP 需要专用接口，本项目未覆盖
@@ -195,6 +197,7 @@ docs/
   API.md            完整 API 参考
   CLI.md            命令行手册（含脚本与 AI 调用示例）
   AI-INTEGRATION.md AI 接入指南
+  ELEVATED-APPS.md  操作管理员权限应用（UIPI 与提权输入桥）
 test/smoke.js       端到端冒烟测试（10 项断言）
 ```
 

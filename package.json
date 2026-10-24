@@ -11,12 +11,14 @@
     "src",
     "docs",
     "cli.js",
+    "bridge.js",
     "README.md"
   ],
   "scripts": {
     "list": "node cli.js list",
     "smoke": "node test/smoke.js",
-    "example": "node examples/basic.js"
+    "example": "node examples/basic.js",
+    "bridge": "node bridge.js --port 8791"
   },
   "keywords": [
     "windows",

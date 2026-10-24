@@ -360,7 +360,38 @@ export function windowDpi(hwnd) {
 }
 
 /* ------------------------------------------------------------------ *
- * 5. SendInput 结构体打包
+ * 5. 进程权限
+ * ------------------------------------------------------------------ */
+const advapi32 = koffi.load('advapi32.dll');
+const OpenProcessToken = advapi32.func('bool OpenProcessToken(void *h, uint access, void *tokenOut)');
+const GetTokenInformation = advapi32.func('bool GetTokenInformation(void *token, int cls, void *info, uint len, void *retLen)');
+const GetCurrentProcess = kernel32.func('void *GetCurrentProcess()');
+
+/**
+ * 当前进程是否以管理员权限运行。
+ *
+ * 这直接决定了能否操作"提权应用"：Windows 的 UIPI 会丢弃低权限进程
+ * 发往高权限窗口的 SendInput 与大部分窗口消息，且不会报错。
+ */
+export function isElevated() {
+  const TOKEN_QUERY = 0x0008;
+  const TokenElevation = 20;
+  const hProc = GetCurrentProcess();
+  const tokenBuf = Buffer.alloc(8);
+  if (!OpenProcessToken(hProc, TOKEN_QUERY, tokenBuf)) return false;
+  const token = is64 ? tokenBuf.readBigUInt64LE(0) : BigInt(tokenBuf.readUInt32LE(0));
+  try {
+    const info = Buffer.alloc(4);
+    const retLen = Buffer.alloc(4);
+    if (!GetTokenInformation(token, TokenElevation, info, 4, retLen)) return false;
+    return info.readUInt32LE(0) === 1;
+  } finally {
+    CloseHandle(token);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * 6. SendInput 结构体打包
  *
  * x64: INPUT = 40 字节，type@0，union@8
  *      MOUSEINPUT = dx@0 dy@4 data@8 flags@12 time@16 (pad4) extra@24

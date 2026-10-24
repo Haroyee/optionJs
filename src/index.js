@@ -71,6 +71,7 @@ export {
   buildSystemPrompt,
 } from './tools.js';
 
-export { dpiAwareness } from './native/win32.js';
+export { dpiAwareness, isElevated } from './native/win32.js';
 export { encodePNG } from './native/png.js';
 export { bigintReplacer, toJSONSafe } from './json.js';
+export { createBridgeClient } from './bridge-client.js';
