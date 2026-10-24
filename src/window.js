@@ -41,6 +41,7 @@ import {
   getExStyle,
   windowDpi,
   lastError,
+  virtualScreen,
   sleep,
 } from './native/win32.js';
 
@@ -114,6 +115,7 @@ export function windowInfo(hwndOrHandle) {
  * @param {boolean} [options.includeUntitled=false] 包含无标题窗口
  * @param {boolean} [options.includeToolWindows=false] 包含工具窗口（托盘溢出、输入法等）
  * @param {boolean} [options.includeMinimized=true] 包含最小化窗口
+ * @param {boolean} [options.skipOffscreen=true] 过滤掉停在屏幕外（-32000,-32000）的窗口
  */
 export function listWindows(options = {}) {
   const {
@@ -122,7 +124,10 @@ export function listWindows(options = {}) {
     includeUntitled = false,
     includeToolWindows = false,
     includeMinimized = true,
+    skipOffscreen = true,
   } = options;
+
+  const virtual = skipOffscreen ? virtualScreen() : null;
 
   const handles = [];
   const callback = koffi.register((hwnd) => {
@@ -149,6 +154,18 @@ export function listWindows(options = {}) {
     if (!info.title && !includeUntitled) continue;
     if (!info.rect || info.area < 100) continue;
     if (!includeMinimized && info.minimized) continue;
+
+    // 有些应用（浏览器、输入法）会留一个停在 -32000,-32000 的隐藏辅助窗口，
+    // 最小化窗口也会被系统停在那里，所以只过滤"非最小化且完全在屏幕外"的
+    if (virtual && !info.minimized) {
+      const r = info.rect;
+      const offscreen =
+        r.x + r.width <= virtual.x ||
+        r.y + r.height <= virtual.y ||
+        r.x >= virtual.x + virtual.width ||
+        r.y >= virtual.y + virtual.height;
+      if (offscreen) continue;
+    }
 
     result.push(info);
   }
@@ -439,6 +456,52 @@ export async function waitForWindow(query, { timeout = 15000, interval = 250, op
   throw new Error(
     `等待窗口超时（${timeout}ms）：${typeof query === 'string' ? query : JSON.stringify(query)}` +
       (lastError ? `\n最后一次错误：${lastError.message}` : '')
+  );
+}
+
+/**
+ * 等待「新出现」的窗口。
+ *
+ * 启动应用后用它，能避免"同类应用已经开着，结果绑到了旧窗口"的经典事故。
+ *
+ * @param {object|string} query 窗口匹配条件
+ * @param {Set<string>|string[]} existingHandles 启动前已存在的窗口句柄
+ * @param {object} [options]
+ * @param {number} [options.timeout=20000]
+ * @param {number} [options.interval=250]
+ * @param {number} [options.pid] 新进程 PID，用于窗口标题还没出来时的兜底匹配
+ */
+export async function waitForNewWindow(query, existingHandles = new Set(), options = {}) {
+  const { timeout = 20000, interval = 250, pid } = options;
+  const before = existingHandles instanceof Set ? existingHandles : new Set(existingHandles);
+  const deadline = Date.now() + timeout;
+  let samePid = null;
+
+  while (Date.now() < deadline) {
+    let matches = [];
+    try {
+      matches = findWindows(query);
+    } catch {
+      matches = [];
+    }
+    const fresh = matches.find((m) => !before.has(m.handle));
+    if (fresh) return fresh;
+    if (pid && !samePid) samePid = matches.find((m) => m.pid === pid) || null;
+    await sleep(interval);
+  }
+
+  // 新进程起来了但窗口还没被枚举到（标题为空等），或者应用把内容开进了已有窗口
+  if (samePid) return samePid;
+
+  const fallback = findWindow(query);
+  if (fallback) {
+    fallback.bindingWarning = '没有检测到新窗口，已回退到已存在的最佳匹配窗口，它可能不是刚启动的那个';
+    return fallback;
+  }
+
+  throw new Error(
+    `启动后 ${timeout}ms 内没有出现匹配窗口：${typeof query === 'string' ? query : JSON.stringify(query)}。` +
+      '可能是应用启动较慢，或主窗口标题与进程名不匹配（可传 match 自定义匹配条件）'
   );
 }
 

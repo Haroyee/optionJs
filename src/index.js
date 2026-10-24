@@ -28,6 +28,7 @@ export {
   setAlwaysOnTop,
   close,
   waitForWindow,
+  waitForNewWindow,
   waitForWindowClose,
   clientToScreen,
   screenToClient,
@@ -72,3 +73,4 @@ export {
 
 export { dpiAwareness } from './native/win32.js';
 export { encodePNG } from './native/png.js';
+export { bigintReplacer, toJSONSafe } from './json.js';

@@ -16,6 +16,7 @@ import { AppSession } from './src/session.js';
 import { listWindows, findWindows } from './src/window.js';
 import { savePNG, toPNG } from './src/capture.js';
 import { createToolkit, toOpenAITools, toAnthropicTools, toolDefinitions } from './src/tools.js';
+import { bigintReplacer } from './src/json.js';
 import { dpiAwareness, virtualScreen, primaryScreen } from './src/native/win32.js';
 
 /* ------------------------------------------------------------------ *
@@ -165,7 +166,7 @@ const num = (v, fallback) => {
 };
 
 function out(data) {
-  if (flags.json) console.log(JSON.stringify(data, null, 2));
+  if (flags.json) console.log(JSON.stringify(data, bigintReplacer, 2));
   else console.log(data);
 }
 
@@ -180,7 +181,19 @@ function resolveSession() {
   if (!Object.keys(query).length) {
     throw new Error('请用 --app / --title / --hwnd 指定目标窗口（可先跑 node cli.js list 看看有什么）');
   }
-  return AppSession.attach(query);
+
+  // 命中多个窗口时提示一下，避免"同名应用有两个窗口，操作了另一个"
+  const matches = findWindows(query);
+  if (matches.length > 1) {
+    const top = matches[0];
+    const tied = matches.filter((m) => top.score - m.score <= 1).length;
+    if (tied > 1) {
+      console.error(`⚠️  有 ${tied} 个窗口匹配度相同，正在操作「${top.title}」(${top.handle})`);
+      console.error('   要精确指定：--title <标题片段> / --hwnd <句柄>，node cli.js find 可查看全部候选');
+    }
+  }
+
+  return matches.length ? new AppSession(matches[0]) : AppSession.attach(query);
 }
 
 /**
@@ -273,9 +286,10 @@ const commands = {
     }
     console.log(`共 ${windows.length} 个窗口（DPI 感知: ${dpiAwareness}）\n`);
     for (const w of windows) {
+      const tag = w.state === 'minimized' ? ' [最小化]' : w.state === 'maximized' ? ' [最大化]' : '';
       console.log(
         `${w.focused ? '▶' : ' '} ${String(w.handle).padEnd(9)} ${String(w.processName || '?').padEnd(22)} ` +
-          `${String(w.rect.width).padStart(5)}x${String(w.rect.height).padEnd(5)} @${w.rect.x},${w.rect.y}  ${w.title}`
+          `${String(w.rect.width).padStart(5)}x${String(w.rect.height).padEnd(5)} @${w.rect.x},${w.rect.y}  ${w.title}${tag}`
       );
     }
   },

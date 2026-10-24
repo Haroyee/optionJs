@@ -15,6 +15,7 @@ import {
   findWindows,
   requireWindow,
   waitForWindow,
+  waitForNewWindow,
   activate as activateWindow,
   maximize as maximizeWindow,
   minimize as minimizeWindow,
@@ -74,8 +75,13 @@ export class AppSession {
   static async launch(exe, options = {}) {
     const { args = [], match, timeout = 20000, cwd, detach = true } = options;
     const exeName = path.basename(String(exe), path.extname(String(exe)));
+    const query = match || { process: exeName };
 
     clearProcessCache();
+    // 记下启动前已存在的窗口，之后只认"新出现的那个"，
+    // 否则同类应用已经开着窗口时，很容易绑到旧窗口上（两个记事本的经典事故）
+    const existing = new Set(findWindows(query).map((w) => w.handle));
+
     // detach 默认开启：应用不应随脚本/命令行进程退出而关闭。
     // 需要让它跟着父进程一起结束时传 detach: false。
     const child = spawn(exe, args, {
@@ -89,8 +95,7 @@ export class AppSession {
       throw new Error(`启动 ${exe} 失败：${err.message}`);
     });
 
-    const query = match || { process: exeName };
-    const info = await waitForWindow(query, { timeout });
+    const info = await waitForNewWindow(query, existing, { timeout, pid: child.pid });
     const session = new AppSession(info, options);
     session.child = child;
     return session;

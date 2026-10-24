@@ -33,15 +33,21 @@ import { AppSession, findWindow, captureWindow, click, createToolkit } from './s
 | `options.match` | object | `{process: 可执行名}` | 自定义窗口匹配条件，用于主窗口标题与进程名不符的情况 |
 | `options.timeout` | number | `20000` | 等待窗口出现的超时（毫秒） |
 | `options.cwd` | string | — | 工作目录 |
+| `options.detach` | boolean | `true` | 应用脱离父进程（脚本结束不影响它） |
 | `options.autoActivate` | boolean | `true` | 操作前自动把窗口带到前台 |
 
 启动的进程句柄挂在 `session.child` 上，需要强杀时可用。
+
+> **只绑定新窗口**：启动前会先记录该类窗口的句柄，之后只认新出现的那个。
+> 所以「记事本已经开着」时再 `launch`，不会绑到旧窗口上（这是同类应用多开时最常见的 bug）。
+> 如果应用把界面开进了已有窗口（如浏览器新标签），会退回到最佳匹配并给 `info.bindingWarning` 提示。
 
 ```js
 const app = await AppSession.launch('notepad.exe');
 const app2 = await AppSession.launch('C:\\Program Files\\App\\app.exe', {
   args: ['--file', 'demo.txt'],
-  match: { title: 'App - 主窗口' },
+  match: { title: 'App - 主窗口' },   // 主窗口标题和进程名不匹配时用 match 指定
+  detach: false,                     // 脚本结束就关掉它
 });
 ```
 
@@ -297,7 +303,7 @@ new AppSession(info, { autoActivate: true, actionDelay: 60 });
 | `hwnd` | bigint \| number \| string | 句柄，精确匹配直接返回 | 10000 |
 | `exact` | boolean | `true` 时字符串必须完全相等 | — |
 
-多个字段是 **AND** 关系。完全相等 > 前缀匹配 > 包含匹配，同名多窗口时还会参考可见性、是否最小化、面积、是否聚焦做微调。
+多个字段是 **AND** 关系。完全相等 > 前缀 > 包含匹配，同名多窗口时还会参考可见性、是否最小化、面积、是否聚焦做微调。
 
 ```js
 findWindow({ process: 'notepad' });
@@ -305,6 +311,14 @@ findWindow({ process: 'chrome', title: /GitHub/ });
 findWindow({ title: '百度一下，你就知道', exact: true });
 findWindow({ hwnd: '0xa071a' });
 ```
+
+> **命中多个窗口时**：`findWindows()` 会返回全部候选（带 `score`），`findWindow()` 只取最高分。
+> 如果多个窗口分数相同，说明条件不足以区分——请加 `title` 收窄，或直接用 `hwnd` 锁定。
+> 想让标题必须完全一致（避免 `README.txt` 和 `README.md` 同时命中），传 `exact: true`。
+
+> **序列化提醒**：`windowInfo` 的 `hwnd` 是 bigint，`JSON.stringify` 会抛错。
+> 需要落盘或走网络时用 `toJSONSafe(info)`，或 `JSON.stringify(info, bigintReplacer)`，
+> 句柄会被转成 `"0xa071a"` 字符串（`toHwnd` 能原样解析回来）。
 
 ### 2.3 窗口控制
 

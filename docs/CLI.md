@@ -62,6 +62,42 @@ node cli.js state --clear    # 清掉（截图后窗口位置变了，建议重�
 node cli.js find --app notepad     # 显示所有候选和分数
 ```
 
+### 命中多个窗口时
+
+同名进程开多个窗口很常见（两个记事本、多个 Chrome 窗口）。此时 CLI 会在 stderr 提示：
+
+```
+⚠️  有 2 个窗口匹配度相同，正在操作「无标题 - Notepad」(0x30806)
+   要精确指定：--title <标题片段> / --hwnd <句柄>，node cli.js find 可查看全部候选
+```
+
+消除歧义的三步：
+
+```bash
+# ① 加标题片段（最常用）
+node cli.js click --app notepad --title "README" 480 200
+
+# ② 标题会变（记事本标题随内容变、浏览器标题随页面变）→ 用句柄
+node cli.js find --app notepad                      # 先看句柄
+node cli.js click --hwnd 0x5079a 480 200            # 之后一直用它，最稳
+
+# ③ 自己启动的窗口，launch 已经把正确的句柄绑好了，不用再选
+node cli.js launch notepad.exe
+```
+
+**一个坑**：标题匹配默认是"包含"关系，`--title README` 会同时命中 `README.txt - Notepad` 和 `README.md - Notepad`。
+要唯一命中，用 `--hwnd`，或者用 API 的 `exact: true` / 正则。
+
+### 选择顺序建议
+
+| 场景 | 用什么 |
+| --- | --- |
+| 常规单窗口应用 | `--app 进程名` |
+| 同类应用开了多个窗口 | `--app` + `--title 片段` |
+| 标题动态变化 | `--hwnd` 句柄 |
+| 自己启动的应用 | `launch`（自动绑定新窗口） |
+| 需要复现的脚本 | 先用 `find` 拿到句柄，脚本里写死句柄最稳定 |
+
 ## 3. 三种坐标
 
 | `--space` | 含义 | 什么时候用 |
