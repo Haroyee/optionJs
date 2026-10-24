@@ -85,19 +85,23 @@ await app.close();
 
 ### 命令行
 
-不需要写代码也能用，适合排障和被其它语言的智能体调用：
+**不写代码也能用完整 API**：窗口识别、截图、鼠标、键盘、窗口控制、批量执行都有对应命令，
+坐标状态会跨进程保留，所以 `shot` 之后可以直接用截图里的像素坐标 `click`。
 
 ```bash
-node cli.js list                                   # 列出所有可见窗口
-node cli.js find  --app notepad                    # 看匹配到了哪个窗口、匹配分数
-node cli.js info  --app notepad                    # 窗口位置/客户区/DPI
-node cli.js shot  --app notepad --out a.png --grid 100 --max-width 1200
-node cli.js click --app notepad 400 300            # 屏幕坐标
-node cli.js type  --app notepad "你好"
-node cli.js key   --app notepad ctrl+s
-node cli.js tools                                  # 导出 AI 工具 schema
-node cli.js dpi                                    # 检查 DPI 感知是否生效
+node cli.js launch notepad.exe                                  # 启动应用
+node cli.js shot  --app notepad --out a.png --grid 100          # 截图（记录坐标映射）
+node cli.js click --app notepad 480 200                         # 用 a.png 的像素坐标点击
+node cli.js type  --app notepad "你好，命令行输入 ✅"              # 输入中文
+node cli.js key   --app notepad ctrl+s                          # 组合键
+node cli.js win   maximize --app notepad                        # 窗口控制
+node cli.js run   steps.json --out-dir run1                     # 批量执行一串动作
 ```
+
+全部命令：`list` `find` `info` `shot` `state` `click` `dclick` `rclick` `move` `drag` `scroll`
+`type` `press` `key` `activate` `win` `stable` `wait` `launch` `run` `tools` `dpi`。
+
+`node cli.js --help` 看用法，完整手册见 [docs/CLI.md](./docs/CLI.md)（含 Bash/Python 调用示例与 AI 接入方式）。
 
 ## 给 AI 用（GUI Agent）
 
@@ -189,6 +193,7 @@ examples/
   ai-agent.js       视觉模型驱动的 agent 循环
 docs/
   API.md            完整 API 参考
+  CLI.md            命令行手册（含脚本与 AI 调用示例）
   AI-INTEGRATION.md AI 接入指南
 test/smoke.js       端到端冒烟测试（10 项断言）
 ```

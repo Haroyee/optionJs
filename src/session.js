@@ -72,16 +72,19 @@ export class AppSession {
    * @param {string} [options.cwd]
    */
   static async launch(exe, options = {}) {
-    const { args = [], match, timeout = 20000, cwd } = options;
+    const { args = [], match, timeout = 20000, cwd, detach = true } = options;
     const exeName = path.basename(String(exe), path.extname(String(exe)));
 
     clearProcessCache();
+    // detach 默认开启：应用不应随脚本/命令行进程退出而关闭。
+    // 需要让它跟着父进程一起结束时传 detach: false。
     const child = spawn(exe, args, {
-      detached: false,
+      detached: detach,
       stdio: 'ignore',
       cwd: cwd || undefined,
       windowsHide: false,
     });
+    if (detach) child.unref();
     child.on('error', (err) => {
       throw new Error(`启动 ${exe} 失败：${err.message}`);
     });

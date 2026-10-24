@@ -436,20 +436,37 @@ buildSystemPrompt({ session, task })  // 返回一段中文系统提示词
 
 ## 6. 命令行
 
+完整的手册（含脚本调用示例）见 [CLI.md](./CLI.md)。命令与 API 一一对应：
+
 ```
-node cli.js list                              列出可见窗口
-node cli.js find   --app <name>               显示匹配结果与分数
-node cli.js info   --app <name>               窗口详细信息
-node cli.js shot   --app <name> [--out] [--max-width] [--grid] [--method]
-node cli.js click  --app <name> <x> <y> [--space image|screen|client] [--button] [--clicks]
-node cli.js type   --app <name> <text> [--interval]
-node cli.js key    --app <name> <combo>
-node cli.js tools                             输出工具 schema JSON
-node cli.js dpi                               DPI 感知与屏幕信息
+node cli.js list [--all]                       列出可见窗口
+node cli.js find   [定位参数]                  显示匹配结果与分数
+node cli.js info   [定位参数]                  窗口详细信息
+node cli.js shot   [定位参数] [--out] [--max-width] [--grid] [--method] [--base64]
+node cli.js state  [--clear]                   查看/清除截图坐标映射
+node cli.js click  <x> <y> [--space] [--button] [--clicks] [--duration]
+node cli.js dclick <x> <y>                     双击
+node cli.js rclick <x> <y>                     右键
+node cli.js move   <x> <y> [--duration]
+node cli.js drag   <x1> <y1> <x2> <y2>
+node cli.js scroll <格数> [--x --y]
+node cli.js type   <文本> [--interval]
+node cli.js press  <键名> [--times]            单键，含 + 时自动按组合键
+node cli.js key    <组合键>
+node cli.js activate / win <action>            聚焦/最大化/最小化/还原/关闭/resize
+node cli.js stable [--timeout] [--threshold]
+node cli.js wait   <毫秒>
+node cli.js launch <exe> [--args] [-- 参数...]
+node cli.js run    <steps.json|->              批量执行工具调用
+node cli.js tools  [--openai|--anthropic]
+node cli.js dpi
 ```
 
 通用参数：`--app`（进程名/标题模糊匹配）、`--title`、`--hwnd`、`--json`。
-`click` 的坐标默认按**屏幕坐标**解释（命令行场景更直观），与 API 默认的图像坐标不同。
+
+**坐标状态跨进程保留**：`shot` 会把这张图对应的屏幕原点、缩放比例写入 `%TEMP%\optionjs-lastshot.json`，
+之后的 `click/move/drag/scroll` 默认按该图的像素坐标换算，因此命令可以分多次执行。
+`--space screen|image|client` 可强制指定坐标系（命令行下 `click` 默认 `auto`：有截图记录用图像坐标，否则用屏幕坐标）。
 
 ---
 
