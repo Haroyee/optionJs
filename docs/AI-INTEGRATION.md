@@ -149,6 +149,7 @@ while (step++ < MAX_STEPS) {
 | 后台窗口截图全黑 | 应用不支持 `PrintWindow` | 让窗口在前台（`activate()`）后用 `method:'screen'` |
 | 中文变成乱码/拼音 | 用了模拟按键而非 Unicode | 本库默认走 `KEYEVENTF_UNICODE`，若自定义实现请确认 flag |
 | 模型反复点击同一处 | 缺少"变化检测"反馈 | 提示词里加"两次无变化就换方案"，或用 `waitForStable` 的 `diff` 判断 |
+| 点了图标没反应、截图也失败 | 弹了 UAC 提权框（安全桌面） | 安全桌面上截图和 `SendInput` 都被系统阻断，**必须人工点"是"**。可查 `consent.exe` 是否在运行；整条链路以管理员身份运行能避免二次提权 |
 
 ## 7. 可靠性增强
 

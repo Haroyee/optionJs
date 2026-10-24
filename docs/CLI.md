@@ -302,6 +302,11 @@ node cli.js run actions.json --json                        # 执行计划
 **`type` 输入没进去**
 先用 `click` 点中输入框，看到光标再输入；输入法候选框不会干扰（走 Unicode 通道）。
 
+**点了图标没反应，连截图都报 `BitBlt 抓屏失败`**
+大概率弹了 **UAC 提权框**：它运行在"安全桌面"上，截图和模拟输入都会被系统阻断。
+`tasklist | findstr consent` 能看到 `consent.exe` 在跑，就说明是这个原因。
+这类弹窗**只能人工点"是"**；想避免，就让整个终端以管理员身份启动，应用就不再触发二次提权。
+
 **窗口被别的程序挡住了截图是黑的**
 加 `--method screen` 前先把窗口激活（`node cli.js activate`），或保持默认 `auto` 让它走后台绘制。
 
