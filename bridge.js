@@ -178,6 +178,13 @@ const routes = {
     const res = await requireSession().close({ waitMs: 3000 });
     return res;
   },
+
+  // 用完即关：避免管理员权限的桥长期挂在本地端口上
+  'POST /shutdown': () => {
+    setTimeout(() => process.exit(0), 200);
+    log('收到 /shutdown，桥即将退出');
+    return { stopping: true };
+  },
 };
 
 /* ---------------- HTTP ---------------- */

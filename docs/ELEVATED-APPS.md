@@ -80,6 +80,7 @@ curl -X POST http://127.0.0.1:8791/click -H "X-OptionJS-Token: mytoken" -d "{\"x
 | POST | `/activate` | 激活窗口 |
 | POST | `/wait_stable` | `{timeout,threshold}` |
 | POST | `/close` | 发 `WM_CLOSE` |
+| POST | `/shutdown` | 关闭桥进程本身（用完记得调） |
 
 坐标语义和 SDK 完全一致：**最近一次 `/screenshot` 的图像像素坐标**，桥内部自动换算。
 

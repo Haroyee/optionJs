@@ -72,5 +72,7 @@ export function createBridgeClient({ port = 8791, host = '127.0.0.1', token, tim
     activate: () => call('POST', '/activate'),
     waitStable: (opts = {}) => call('POST', '/wait_stable', opts),
     close: () => call('POST', '/close'),
+    /** 关闭桥进程本身（用完记得调用，别让管理员权限的端口长期开着） */
+    shutdown: () => call('POST', '/shutdown'),
   };
 }
