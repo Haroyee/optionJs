@@ -1,0 +1,40 @@
+{
+  "name": "optionjs",
+  "version": "0.1.0",
+  "description": "Windows 桌面应用自动化 SDK：窗口识别、屏幕截图、鼠标键盘操作，面向 AI Agent 调用",
+  "type": "module",
+  "main": "src/index.js",
+  "bin": {
+    "optionjs": "cli.js"
+  },
+  "files": [
+    "src",
+    "docs",
+    "cli.js",
+    "README.md"
+  ],
+  "scripts": {
+    "list": "node cli.js list",
+    "smoke": "node test/smoke.js",
+    "example": "node examples/basic.js"
+  },
+  "keywords": [
+    "windows",
+    "automation",
+    "gui",
+    "rpa",
+    "ai-agent",
+    "win32",
+    "screenshot"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "os": [
+    "win32"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "koffi": "^3.3.4"
+  }
+}
